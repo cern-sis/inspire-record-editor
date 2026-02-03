@@ -1,0 +1,22 @@
+import { ThemeConfig } from "antd";
+
+export const PRIMARY_COLOR = "#006996";
+
+export const theme: ThemeConfig = {
+  token: {
+    colorPrimary: PRIMARY_COLOR,
+    colorLink: PRIMARY_COLOR,
+    colorLinkHover: "#1a7fa3",
+    borderRadius: 2,
+    colorBgLayout: "#f0f2f5",
+    fontFamily: "Titillium Web",
+  },
+  components: {
+    Segmented: {
+      trackBg: "#E4E8EC",
+    },
+    Progress: {
+      defaultColor: PRIMARY_COLOR,
+    },
+  },
+};

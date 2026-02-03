@@ -1,0 +1,38 @@
+@font-face {
+  font-family: "Titillium Web";
+  src: url("./fonts/Titillium-Web-Regular.woff") format("woff");
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "Titillium Web";
+  src: url("./fonts/Titillium-Web-RegularItalic.woff") format("woff");
+  font-style: italic;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "Titillium Web";
+  src: url("./fonts/Titillium-Web-Semibold.woff") format("woff");
+  font-style: normal;
+  font-weight: 600;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  padding: 0;
+  margin: 0;
+}
+
+div#root {
+  height: 100vh;
+}
+
+.ant-drawer,
+.ant-drawer-mask,
+.ant-drawer-content-wrapper {
+  z-index: 100 !important;
+}
