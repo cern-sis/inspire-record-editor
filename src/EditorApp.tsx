@@ -1,193 +1,145 @@
-import Icon, {
+import {
     FileTextOutlined,
-    FolderOpenOutlined,
-    DeleteOutlined,
-    SaveOutlined,
-    FileAddOutlined,
-    CheckOutlined,
     InfoCircleOutlined,
-    DownloadOutlined,
-    UploadOutlined,
-    RollbackOutlined,
-    MenuOutlined,
-    CloseOutlined,
     SearchOutlined,
     ReloadOutlined,
+    EyeOutlined,
+    EyeInvisibleOutlined,
+    LoadingOutlined,
+    Loading3QuartersOutlined,
+    ArrowLeftOutlined,
+    MenuOutlined,
+    CloseCircleFilled,
 } from "@ant-design/icons";
 import {
-    Badge,
     Button,
     Col,
-    Drawer,
     Grid,
     Image,
+    InputNumber,
     Layout,
-    List,
     Menu,
-    message,
     Modal,
-    Popconfirm,
+    message,
     Row,
     Space,
-    Tag,
+    Tabs,
     Tooltip,
     Typography,
-    Upload,
 } from "antd";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
     SchemaCodeEditor,
-    FormPreview,
+    RJSFForm,
     FormuleContext,
-    SchemaPreview,
     SchemaWizardState,
-    SelectOrEdit,
-    deleteFromLocalStorage,
-    getAllFromLocalStorage,
-    initFormuleSchema,
     isUnsaved,
-    saveToLocalStorage,
-    loadFromLocalStorage,
-    AiChatFooter,
+    CodeDiffViewer,
+    CodeViewer,
 } from "react-formule";
 import { theme } from "./theme";
 import formuleLogo from "./assets/logo.png";
-import SparklesIcon from "./assets/sparkles.svg?react";
 
 import "./style.css";
 import { Header } from "antd/es/layout/layout";
 import Title from "antd/es/typography/Title";
 import Input from "antd/es/input/Input";
 import { fetchHepSchema, fetchInspireRecord } from "./services/inspire";
+import hepSchema from "../schemas/hep.json";
+import { TAB_KEYS } from "./configs";
+import Search from "antd/es/input/Search";
 
 const { Content, Footer } = Layout;
 const { useBreakpoint } = Grid;
 
+const { schema, uiSchema } = hepSchema;
+
+type TabType = keyof typeof TAB_KEYS;
+
+function filterSchemaByTab(schema: any, tab: TabType): any {
+    if (!schema || typeof schema !== "object" || !schema.properties) {
+        return schema;
+    }
+
+    const allowedKeys = TAB_KEYS[tab];
+    const filteredProperties: Record<string, any> = {};
+
+    for (const key of allowedKeys) {
+        if (key in schema.properties) {
+            filteredProperties[key] = schema.properties[key];
+        }
+    }
+
+    return {
+        ...schema,
+        properties: filteredProperties,
+    };
+}
+
+function replaceDescriptionWithTooltip(schema) {
+    if (Array.isArray(schema)) {
+        return schema.map(replaceDescriptionWithTooltip);
+    }
+
+    if (schema && typeof schema === "object") {
+        const out = {};
+        for (const [key, value] of Object.entries(schema)) {
+            const newKey = key === "description" ? "tooltip" : key;
+            out[newKey] = replaceDescriptionWithTooltip(value);
+        }
+        return out;
+    }
+
+    return schema;
+}
+
 const App = () => {
-    const [formuleState, setFormuleState] = useState<SchemaWizardState>();
-    const [localSchemas, setLocalSchemas] = useState(getAllFromLocalStorage());
+    const screens = useBreakpoint();
+
+    const [menuHidden, setMenuHidden] = useState(screens.md);
     const [viewerOpen, setViewerOpen] = useState(false);
-    const [drawerOpen, setDrawerOpen] = useState(false);
     const [helpOpen, setHelpOpen] = useState(false);
-    const [justSaved, setJustSaved] = useState(false);
-    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-    const [aiFooterOpen, setAiFooterOpen] = useState(() => {
-        const storedAIState = localStorage.getItem("aiFooterOpen");
-        return storedAIState ? JSON.parse(storedAIState) : true;
-    });
+    const [showPreview, setShowPreview] = useState(true);
 
+    const [inputId, setInputId] = useState('593382');
+    const inputRef = useRef(null);
 
-    // const { token: { colorBgContainer, borderRadiusLG } } = theme.useToken();
-    // const { message: antdMessage } = AntApp.useApp?.() || { message };
-
-    const [inputId, setInputId] = useState('');
-    const inputRef = useRef<Input>(null as any);
-
+    const [initialData, setInitialData] = useState({});
+    const [formData, setformData] = useState({});
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<Error | null>(null);
-    const [data, setData] = useState<any | null>(null);
+    const [error, setError] = useState(null);
 
-    const [schemaLoading, setSchemaLoading] = useState(true);
-    const [schema, setSchema] = useState<any | null>(null);
+    const cleanedSchema = useCallback((tab) => {
+        return replaceDescriptionWithTooltip(filterSchemaByTab(schema, tab)) || schema || {}
+    }, [schema])
 
-    useEffect(() => {
-        (async () => {
-            try {
-                setSchemaLoading(true);
-                const s = await fetchHepSchema();
-                setSchema(s);
-            } catch (e: any) {
-                setError(e);
-            } finally {
-                setSchemaLoading(false);
-            }
-        })();
-    }, []);
-
-    // const documents: DocItem[] = useMemo(() => extractDocuments(data), [data]);
 
     const handleFetch = async () => {
         const id = String(inputId).trim();
         if (!id) {
-            // antdMessage.warning('Please enter an INSPIRE id');
+            message.warning('Please enter an INSPIRE id');
             inputRef.current?.focus();
             return;
         }
         setError(null);
         setLoading(true);
-        setData(null);
+        setformData({});
         try {
             const json = await fetchInspireRecord(id);
-            setData(json);
-            // antdMessage.success('Record loaded');
+            setInitialData(json?.metadata);
+            setformData(json?.metadata);
+            message.success('Record loaded');
         } catch (e: any) {
             setError(e);
-            // antdMessage.error(e.message || 'Fetch failed');
+            message.error(e.message || 'Fetch failed');
         } finally {
             setLoading(false);
         }
     };
 
-    const screens = useBreakpoint();
-    const [menuHidden, setMenuHidden] = useState(screens.md);
-
-    useEffect(() => {
-        localStorage.setItem("aiFooterOpen", JSON.stringify(aiFooterOpen));
-    }, [aiFooterOpen]);
-
-    useEffect(() => {
-        setHasUnsavedChanges(isUnsaved());
-    }, [formuleState]);
-
-    useEffect(() => {
-        const handleKeyDowEvent = (e: KeyboardEvent) => {
-            if (e.ctrlKey || (e.metaKey && e.key === "s")) {
-                e.preventDefault();
-                saveLocalSchema();
-            }
-        };
-        window.addEventListener("keydown", handleKeyDowEvent);
-        return () => {
-            window.removeEventListener("keydown", handleKeyDowEvent);
-        };
-    }, []);
-
-    const handleFormuleStateChange = (newState: SchemaWizardState) => {
-        setFormuleState(newState);
-    };
-
-    const handleDownload = (id: string, schema: object) => {
-        const a = document.createElement("a");
-        const file = new Blob([JSON.stringify(schema, null, 4)], {
-            type: "text/json",
-        });
-        a.href = URL.createObjectURL(file);
-        a.download = `formuleForm_${id}.json`;
-        a.click();
-    };
-
-    const deleteLocalSchema = (id: string) => {
-        deleteFromLocalStorage(id).then((list) => setLocalSchemas(list));
-        if (id === formuleState?.id) {
-            initFormuleSchema();
-        }
-    };
-
-    const saveLocalSchema = () => {
-        saveToLocalStorage().then((list) => {
-            setHasUnsavedChanges(isUnsaved());
-            setLocalSchemas(list);
-            setJustSaved(true);
-            setTimeout(() => {
-                setJustSaved(false);
-            }, 1000);
-        });
-    };
-
     return (
-        <FormuleContext theme={theme} synchronizeState={handleFormuleStateChange}>
+        <FormuleContext theme={theme}>
             <Layout hasSider style={{ height: "100vh" }}>
-
                 <Layout.Sider
                     hidden={menuHidden}
                     width={200}
@@ -207,8 +159,15 @@ const App = () => {
                             display: "flex",
                             justifyContent: "center",
                             padding: "15px 6px",
+                            flexDirection: "column",
+                            gap: "10px",
+                            justifyItems: "center",
+                            alignContent: "center",
+                            alignItems: "center"
                         }}
+                        onClick={() => setMenuHidden(!menuHidden)}
                     >
+                        <MenuOutlined style={{ fontSize: 36 }} />
                         <Image
                             src={formuleLogo}
                             alt="Logo"
@@ -226,42 +185,8 @@ const App = () => {
                     >
                         <Menu
                             selectable={false}
-                            selectedKeys={[
-                                aiFooterOpen ? "ai" : "",
-                                drawerOpen ? "load" : "",
-                                viewerOpen ? "view" : "",
-                                helpOpen ? "help" : "",
-                            ]}
                             mode="inline"
                             style={{ borderRight: "none", flex: "auto" }}
-                            items={[
-                                {
-                                    key: "save",
-                                    icon: (
-                                        <Badge
-                                            dot={hasUnsavedChanges}
-                                            color={theme.token.colorPrimary}
-                                            offset={[6, 8]}
-                                        >
-                                            {justSaved ? (
-                                                <CheckOutlined
-                                                    style={{ color: theme.token.colorPrimary }}
-                                                />
-                                            ) : (
-                                                <SaveOutlined />
-                                            )}
-                                        </Badge>
-                                    ),
-                                    label: "Save Schema",
-                                    onClick: !justSaved ? () => saveLocalSchema() : undefined,
-                                },
-                                {
-                                    key: "view",
-                                    icon: <FileTextOutlined />,
-                                    label: "View Schema",
-                                    onClick: () => setViewerOpen(true),
-                                }
-                            ]}
                         />
                         <Menu
                             selectable={false}
@@ -269,23 +194,35 @@ const App = () => {
                             style={{ borderRight: "none" }}
                             items={[
                                 {
-                                    key: "help",
-                                    icon: <InfoCircleOutlined />,
-                                    label: "Information",
-                                    onClick: () => setHelpOpen(true),
+                                    key: "togglereview",
+                                    icon: showPreview ? <EyeInvisibleOutlined /> : <EyeOutlined />,
+                                    label: "Show preview",
+                                    onClick: () => setShowPreview(!showPreview),
                                 },
                                 {
-                                    style: { display: screens.md ? "none" : undefined },
-                                    key: "close",
-                                    icon: <CloseOutlined />,
-                                    label: "Close menu",
-                                    onClick: () => setMenuHidden(!menuHidden),
+                                    key: "view",
+                                    icon: <FileTextOutlined />,
+                                    label: "View Schema",
+                                    onClick: () => setViewerOpen(true),
+                                },
+                                {
+                                    key: "toggleOverview",
+                                    icon: <InfoCircleOutlined />,
+                                    label: "Overview",
+                                    onClick: () => setHelpOpen(true),
                                 },
                             ]}
                         />
                     </div>
-                </Layout.Sider>
-                <Layout style={{ marginInlineStart: !menuHidden ? 64 : 0 }}>
+                    <Modal
+                        title="Generated JSON schemas"
+                        open={helpOpen}
+                        onCancel={() => setHelpOpen(false)}
+                        width={1000}
+                        footer={null}
+                    >
+                        [TODO]
+                    </Modal>
                     <Modal
                         title="Generated JSON schemas"
                         open={viewerOpen}
@@ -303,7 +240,7 @@ const App = () => {
                             >
                                 <Typography.Text strong>Schema</Typography.Text>
                                 <SchemaCodeEditor
-                                    value={JSON.stringify(formuleState?.current.schema, null, 2)}
+                                    value={JSON.stringify(schema, null, 2)}
                                     lang="json"
                                     height="45vh"
                                     valueType="schema"
@@ -319,7 +256,7 @@ const App = () => {
                                 <Typography.Text strong>UI Schema</Typography.Text>
                                 <SchemaCodeEditor
                                     value={JSON.stringify(
-                                        formuleState?.current.uiSchema,
+                                        uiSchema,
                                         null,
                                         2,
                                     )}
@@ -337,7 +274,7 @@ const App = () => {
                             >
                                 <Typography.Text strong>Form data</Typography.Text>
                                 <SchemaCodeEditor
-                                    value={JSON.stringify(formuleState?.formData, null, 2)}
+                                    value={JSON.stringify(formData, null, 2)}
                                     lang="json"
                                     height="25vh"
                                     isReadOnly
@@ -345,24 +282,42 @@ const App = () => {
                             </Col>
                         </Row>
                     </Modal>
-                    <Header style={{ position: 'sticky', top: 0, zIndex: 100, display: 'flex', alignItems: 'center', gap: 16, background: '#001529' }}>
-                        <Title level={4} style={{ color: 'white', margin: 0 }}>Inspire HEP App</Title>
+                </Layout.Sider>
+                <Layout style={{ marginInlineStart: !menuHidden ? 64 : 0 }}>
+                    <Header style={{ position: 'sticky', top: 0, zIndex: 100, display: 'flex', alignItems: 'center', gap: 16, background: '#001529', padding: "0 20px" }}>
+                        {menuHidden && <div
+                            style={{
+                                display: "flex",
+                                justifyContent: "center",
+                                gap: "20px"
+                            }}
+                            onClick={() => setMenuHidden(!menuHidden)}
+                        >
+                            <Image
+                                src={formuleLogo}
+                                alt="Logo"
+                                preview={false}
+                                style={{ width: "50px", maxWidth: "120px" }}
+                            />
+                        </div>
+                        }
+                        <MenuOutlined color="red" size={50} />
                         <Space.Compact style={{ flex: 1, maxWidth: 720 }}>
-                            <Input
+                            <Search
                                 ref={inputRef as any}
                                 size="large"
-                                prefix={<SearchOutlined />}
+                                width={100}
+                                prefix={"INSPIRE ID:"}
                                 placeholder="Enter INSPIRE id (e.g., 1511149)"
                                 value={inputId}
                                 onChange={(e) => setInputId(e.target.value)}
                                 onPressEnter={handleFetch}
+                                onSearch={handleFetch}
                                 allowClear
+                                loading={loading}
                             />
-                            <Button type="primary" size="large" onClick={handleFetch}>Fetch</Button>
-                            <Tooltip title="Clear">
-                                <Button size="large" icon={<ReloadOutlined />} onClick={() => { setInputId(''); setData(null); setError(null); }} />
-                            </Tooltip>
                         </Space.Compact>
+                        {error && <CloseCircleFilled style={{ color: "red" }} />}
                     </Header>
                     <Content
                         style={{
@@ -371,61 +326,110 @@ const App = () => {
                         }}
                     >
                         <Row style={{ height: "100%" }}>
-                            {/* <Col
-                                xs={10}
-                                md={5}
-                                style={{
-                                    overflowX: "hidden",
-                                    height: "100%",
-                                    display: "flex",
-                                    scrollSnapAlign: screens.md ? "none" : "start",
-                                }}
-                            >
-                                <SelectOrEdit />
-                            </Col>
-                            <Col
-                                xs={14}
-                                md={5}
-                                style={{
-                                    overflowX: "hidden",
-                                    height: "100%",
-                                    padding: "0px 15px",
-                                    backgroundColor: "#F6F7F8",
-                                    scrollSnapAlign: screens.md ? "none" : "start",
-                                }}
-                            >
-                                <SchemaPreview hideSchemaKey={false} />
-                            </Col> */}
                             <Col
                                 xs={24}
-                                md={14}
+                                md={showPreview ? 14 : 24}
                                 style={{
                                     overflowX: "hidden",
                                     height: "100%",
                                     scrollSnapAlign: screens.md ? "none" : "start",
+                                    padding: "10px"
                                 }}
                             >
-                                <FormPreview liveValidate={true} hideAnchors={false} />
+                                <Tabs
+                                    style={{ flex: 1 }}
+                                    destroyOnHidden={true}
+                                    tabBarStyle={{ borderBottom: "2px solid #ccc" }}
+                                    items={[
+                                        {
+                                            label: 'Main',
+                                            children: <RJSFForm
+                                                schema={cleanedSchema("main")}
+                                                uiSchema={uiSchema}
+                                                formData={formData}
+                                                onChange={({ formData }) => setformData(formData)}
+                                            />,
+                                            key: '1'
+                                        },
+                                        {
+                                            label: 'References',
+                                            children: <RJSFForm
+                                                schema={cleanedSchema("refs") || schema || {}}
+                                                uiSchema={uiSchema}
+                                                formData={formData}
+                                                onChange={({ formData }) => setformData(formData)}
+                                            />, key: '2'
+                                        },
+                                        {
+                                            label: 'Authors', children: <RJSFForm
+                                                schema={cleanedSchema("authors") || schema || {}}
+                                                uiSchema={uiSchema}
+                                                formData={formData}
+                                                onChange={({ formData }) => setformData(formData)}
+                                            />, key: '3'
+                                        }
+                                    ]}
+                                />
                             </Col>
-                            <Col
-                                xs={14}
-                                md={10}
-                                style={{
-                                    overflowX: "hidden",
-                                    height: "100%",
-                                    padding: "0px 15px",
-                                    backgroundColor: "#F6F7F8",
-                                    scrollSnapAlign: screens.md ? "none" : "start",
-                                }}
-                            >
-                                <iframe
-                                    style={{ width: '100%', height: '100%', border: 'none' }}
-                                    src="https://doi.org/10.3934/amc.2024056" />
-                            </Col>
+                            {
+                                showPreview ?
+                                    <Col
+                                        xs={14}
+                                        md={10}
+                                        className="previewTabs"
+                                        style={{
+                                            overflowX: "hidden",
+                                            height: "100%",
+                                            padding: "0px 15px",
+                                            backgroundColor: "#F6F7F8",
+                                            scrollSnapAlign: screens.md ? "none" : "start",
+                                        }}
+                                    >
+                                        <Tabs
+                                            style={{ flex: 1, width: "100%", display: 'flex' }}
+                                            defaultActiveKey="1"
+                                            items={[
+                                                ...(formData?.documents?.map(doc => ({
+                                                    label: 'PDF',
+                                                    children: <iframe
+                                                        style={{ width: '100%', height: '100%', border: 'none' }}
+                                                        src={doc?.url} />,
+                                                    key: '1'
+                                                })) || []),
+                                                {
+                                                    label: 'DOI',
+                                                    children: <div style={{ flex: 1, width: "100%" }}>
+                                                        <strong>{formData?.dois && formData?.dois[0]?.value}</strong> (<a href={`https://doi.org/${formData?.dois && formData?.dois[0]?.value}`} >link</a>)
+                                                        <hr />
+                                                        <iframe
+                                                            style={{ width: '100%', height: '100%', border: 'none' }}
+                                                            src={`https://doi.org/${formData?.dois && formData?.dois[0]?.value}`} />
+
+                                                    </div>,
+                                                    key: '2'
+                                                },
+                                                {
+                                                    label: 'JSON',
+                                                    children: <div style={{ width: '100%', flex: 1 }}><CodeViewer
+                                                        value={JSON.stringify(
+                                                            formData,
+                                                            null,
+                                                            2,
+                                                        )}
+                                                        lang="json"
+                                                        height="100%"
+                                                        reset={true}
+                                                    /></div>,
+                                                    key: '3'
+                                                }
+                                            ]}
+                                        />
+
+                                    </Col> : null
+                            }
                         </Row>
                     </Content>
                     <Footer style={{ padding: 0 }}>
-                        {/* {aiFooterOpen && <AiChatFooter />} */}
                         <Row
                             align="bottom"
                             justify="center"
@@ -439,22 +443,8 @@ const App = () => {
                         </Row>
                     </Footer>
                 </Layout>
-                {/* {!screens.md && menuHidden && (
-                    <Tooltip title="Open menu">
-                        <Button
-                            style={{
-                                position: "fixed",
-                                top: 10,
-                                right: 10,
-                                zIndex: 1000,
-                            }}
-                            icon={menuHidden ? <MenuOutlined /> : <CloseOutlined />}
-                            onClick={() => setMenuHidden(!menuHidden)}
-                        />
-                    </Tooltip>
-                )} */}
             </Layout>
-        </FormuleContext>
+        </FormuleContext >
     );
 };
 

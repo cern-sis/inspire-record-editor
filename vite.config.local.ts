@@ -5,7 +5,7 @@ import viteConfig from "./vite.config.ts";
 // and without having to yarn link anything
 viteConfig.resolve = {
   alias: {
-    "react-formule": resolve(__dirname, "../src/index.ts"),
+    // "react-formule": resolve(__dirname, "../react-formule/src/index.ts"),
   },
   dedupe: ["react", "react-dom"],
 };

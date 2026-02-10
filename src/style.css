@@ -36,3 +36,21 @@ div#root {
 .ant-drawer-content-wrapper {
   z-index: 100 !important;
 }
+
+
+.previewTabs .ant-tabs {
+  height: 100%;
+}
+  
+.previewTabs .ant-tabs-content {
+  flex: 1;
+  display: flex;
+}
+
+.previewTabs .ant-tabs-tabpane-active {
+  display: flex;
+  flex: 1;
+}
+.previewTabs .ant-tabs-content-holder {
+  display: flex;
+}

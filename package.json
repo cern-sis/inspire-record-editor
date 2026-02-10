@@ -14,7 +14,7 @@
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-formule": "file:..",
+    "react-formule": "1.9.0",
     "vite-plugin-svgr": "^4.3.0"
   },
   "devDependencies": {

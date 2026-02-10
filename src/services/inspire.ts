@@ -1,7 +1,8 @@
 import hepSchema from "../data/hep.json";
 import exampleRecord from "../data/record_resp_example.json";
 
-export const INSPIRE_EDITOR_BASE = 'https://inspirehep.net/api/editor/literature/';
+// export const INSPIRE_EDITOR_BASE = 'https://inspirehep.net/api/editor/literature/';
+export const INSPIRE_EDITOR_BASE = 'https://inspirehep.net/api/literature/';
 export const INSPIRE_HEP_SCHEMA_URL = 'https://inspirehep.net/schemas/records/hep.json';
 
 
