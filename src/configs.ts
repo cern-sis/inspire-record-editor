@@ -145,7 +145,9 @@ const REFS_TAB = [
 ]
 
 export const TAB_KEYS = {
+    all: ALL_KEYS,
     main: MAIN_TAB,
+    main_admin: ADMIN_MAIN_TAB,
     refs: REFS_TAB,
     authors: AUTHORS_TAB,
 }

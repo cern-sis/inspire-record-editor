@@ -1,0 +1,29 @@
+name: Build and deploy demo
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy-demo:
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    name: Build and deploy demo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
+      - name: Install
+        run: yarn
+      - name: Build
+        run: yarn build
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: dist
