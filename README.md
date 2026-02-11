@@ -1,17 +1,95 @@
-# Formule demo
+# INSPIRE HEP Record Editor
 
-This is a small application that serves as a playground to test react-formule.
+A web-based editor for viewing and editing INSPIRE HEP (High Energy Physics) records using JSON Schema-driven forms.
 
-## How to run locally
+## Features
 
-### The easy way
+- **Record Fetching**: Fetch INSPIRE HEP records by their ID
+- **Tabbed Editing**: Edit records across three organized tabs:
+  - **Main**: Core metadata fields (titles, abstracts, DOIs, etc.)
+  - **References**: Bibliography and citation data
+  - **Authors**: Author and collaboration information
+- **Live Preview Panel**:
+  - PDF viewer for attached documents
+  - DOI link and iframe preview
+  - Raw JSON data viewer
+- **Schema-driven Forms**: Uses [react-formule](https://github.com/cern-sis/react-formule) for dynamic form generation
 
-Simply run `yarn install` in react-formule, `yarn install` and `yarn dev` in formule-demo and visit `localhost:3030`. You will see any changes in react-formule immediately in the demo app.
+## Project Structure
 
-**Note:** If you look at `formule-demo/vite.config.local.ts` you will see an alias for `react-formule`. What this does is essentially equivalent to using `yarn link` with `./src/index.ts` as entry point.
+```
+src/
+├── components/
+│   ├── AppFooter.tsx      # Footer with version info
+│   ├── AppHeader.tsx      # Header with search input
+│   ├── EditorTabs.tsx     # Main/References/Authors tabs
+│   ├── PreviewPanel.tsx   # PDF/DOI/JSON preview
+│   └── Sidebar.tsx        # Navigation sidebar
+├── utils/
+│   └── schemaUtils.ts     # Schema filtering utilities
+├── services/
+│   └── inspire.ts         # INSPIRE API client
+├── configs.ts             # Tab field configurations
+├── EditorApp.tsx          # Main application component
+└── theme.ts               # Ant Design theme config
+```
 
-### The advanced way
+## Getting Started
 
-If you want to test the actual bundle or if you want to link react-formule to a more complex application and you find any issues with the above approach, you can **comment out the alias** mentioned above, run `yarn link` in react-formule and then `yarn link react-formule` in formule-demo. This will point to the formule bundle, so you will need to build formule.
+### Prerequisites
 
-To make the dev experience more confortable you can run `yarn build:watch` in react-formule, which will be triggered after any change to the formule code and will rebuild the bundle. For even more automation, you can use [vite-plugin-restart](https://github.com/antfu/vite-plugin-restart) in formule-demo (or in your own project using react-formule and Vite) and watch the bundle file inside `react-formule/dist/react-formule.js`, so that the Vite dev server is automatically reloaded once the new bundle is built (otherwise you would have to run `vite dev --force` yourself every time).
+- Node.js 18+
+- Yarn
+
+### Installation
+
+```bash
+yarn install
+```
+
+### Development
+
+```bash
+yarn dev
+```
+
+Visit `http://localhost:3030` to view the application.
+
+### Building
+
+```bash
+yarn build
+```
+
+### Testing
+
+Run Cypress tests in interactive mode:
+
+```bash
+yarn test:e2e
+```
+
+Run Cypress tests headlessly:
+
+```bash
+yarn test:e2e:run
+```
+
+## Usage
+
+1. Enter an INSPIRE record ID in the search bar (e.g., `593382`)
+2. Click "Fetch" or press Enter to load the record
+3. Edit fields across the Main, References, and Authors tabs
+4. Use the preview panel to view attached PDFs, DOI pages, or raw JSON
+
+## Tech Stack
+
+- **React 18** with TypeScript
+- **Ant Design** for UI components
+- **react-formule** for JSON Schema form rendering
+- **Vite** for development and building
+- **Cypress** for end-to-end testing
+
+## License
+
+MIT

@@ -21,7 +21,7 @@ const { schema, uiSchema } = hepSchema;
 const App = () => {
     const screens = useBreakpoint();
 
-    const [menuHidden, setMenuHidden] = useState(screens.md);
+    const [menuHidden, setMenuHidden] = useState(screens.md ?? true);
     const [viewerOpen, setViewerOpen] = useState(false);
     const [helpOpen, setHelpOpen] = useState(false);
     const [showPreview, setShowPreview] = useState(true);

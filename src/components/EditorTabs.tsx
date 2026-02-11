@@ -17,6 +17,7 @@ export function EditorTabs({
 }: EditorTabsProps) {
     return (
         <Tabs
+            id="editor-tabs"
             style={{ flex: 1 }}
             destroyOnHidden={true}
             tabBarStyle={{ borderBottom: "2px solid #ccc" }}

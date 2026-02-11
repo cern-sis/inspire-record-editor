@@ -60,6 +60,7 @@ export function AppHeader({
             )}
             <Space.Compact style={{ flex: 1, maxWidth: 720 }}>
                 <Search
+                    id="main-search"
                     ref={inputRef}
                     size="large"
                     prefix="INSPIRE ID:"
