@@ -7,7 +7,7 @@ const version = execSync("npm show react-formule version").toString().trim();
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: "/react-formule",
+  base: "/inspire-record-editor",
   plugins: [svgr(), react()],
   define: {
     "process.env": {},
