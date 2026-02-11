@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 // import App from "./App.tsx";
-import App from "./EditorApp.tsx";
+import App from "./App.tsx";
 import { ConfigProvider } from "antd";
 import { theme } from "./theme.ts";
 import { Alert } from "antd";
